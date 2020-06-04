@@ -1,0 +1,121 @@
+
+;;
+; setup
+
+
+
+
+to setup
+
+  setup-world
+
+  setup-agents
+
+  setup-globals
+  
+end
+
+;;
+; setup globals
+to setup-globals
+  
+  set humans-history []
+  set zombies-history []
+
+  set turn-probability 1 / 60.0
+  
+  set final-time 2160
+  
+end
+
+
+
+to setup-agents
+  clear-turtles
+  ;; this stuff is in this function just so it always happens
+  clear-all-plots
+
+  reset-ticks
+  
+  random-seed simulation-seed
+
+  ;; Zombies get the earliest who numbers; we use this elsewhere.
+  ;; Make sure the beings are on non-built squares.
+  create-zombies num-zombies [new-zombie]
+
+  create-humans num-humans [new-human]
+
+  create-military num-military [
+    set color red
+    set shape "face neutral"
+    set size 0.5
+    set pen-size 0.5
+  ]
+
+  ask turtles [
+    setxy random-float world-width random-float world-height
+    ; FIXME useless, heading is already random
+    ;set heading random-float 360
+    set paralysis-time 0
+    set kills 0
+    
+    ; FIXME better locate directly on non built patches
+    while [pcolor != black] [fd 1]
+  ]
+end
+
+
+
+to setup-world
+  clear-patches
+  
+  random-seed space-seed
+  
+  ask patches [
+    ;; FIXME patch color should not be used as a state variable
+    set pcolor gray - 3
+    set fade-time 0
+  ]
+
+  
+  ;; Make the alleyways.  Instead of the rectangle-placing approach, which proves slow,
+  ;; let a special kind of turtle dig them.
+  ;; The number of diggers here and later will need changing if the screen size is changed.
+  clear-turtles
+  
+  ;; FIXME this should not be hardcoded
+  create-diggers 154;; 112
+
+  ;; Set the diggers up in pairs facing away from each other, so we don't get dead end passages
+  ask diggers with [who mod 2 = 0] [
+    setxy random-float world-width random-float world-height
+    set heading 90 * random 4
+  ]
+  ask diggers with [who mod 2 = 1] [
+    setxy [xcor] of turtle (who - 1) [ycor] of turtle (who - 1)
+    set heading 180 + [heading] of turtle (who - 1)
+    fd 1
+  ]
+
+  ask diggers [
+    while [pcolor != black] [
+      set pcolor black
+      fd 1
+      if random-float 1 < (1 / 30) [lt 90 + 180 * random 2]
+    ]
+  ]
+
+  ;; Make the squares, by getting a few diggers to dig them out.
+  ct
+  create-diggers num-squares [
+    setxy random-float world-width random-float world-height
+    let xsize 2 + random 60
+    let ysize 2 + random 60
+    foreach n-values xsize [ ?1 -> ?1 ] [ ?1 ->
+      let x ?1
+      foreach n-values ysize [ ??1 -> ??1 ] [ ??1 -> ask patch-at x ??1 [set pcolor black] ]
+    ]
+  ]
+  
+  clear-turtles
+end

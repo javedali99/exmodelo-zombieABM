@@ -1,0 +1,21 @@
+import _file_.model._
+import _file_.environments._
+
+val abc =
+  IslandABC(
+    evaluation = model set (rescuedDynamicWindow := 20),
+    prior = Seq(
+      humanInformedRatio in (0.0, 1.0),
+      humanInformProbability in (0.0, 1.0),
+      humanFollowProbability in (0.0, 1.0)),
+    observed =  Seq(rescuedDynamic -> Array(0,5,14,42,36,9,5,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)),
+    sample = 1000,
+    generated = 100,
+    minAcceptedRatio = 0.01,
+    stopSampleSizeFactor = 5,
+    parallelism = default_env.par
+  )
+
+val save = ABCHook(abc, workDirectory / "results/abc/rescuedDynamic/")
+
+abc hook save on default_env.env
